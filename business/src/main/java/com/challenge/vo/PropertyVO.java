@@ -121,5 +121,4 @@ public class PropertyVO implements Serializable {
 	public void setProvinces(List<String> provinces) {
 		this.provinces = provinces;
 	}
-
 }

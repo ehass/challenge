@@ -16,7 +16,7 @@ public class TestUtils {
 	public static PropertyVO getPropertyVO(String description) throws Exception {
 		Property property = new Property();
 		property.setDescription(description);
-		property.setId(999L);
+		property.setId(1L);
 		property.setLatitude(99);
 		property.setLongitude(999);
 		property.setNumBaths(3);
@@ -26,20 +26,13 @@ public class TestUtils {
 		property.setTitle("Property Mock Title");
 
 		Province province1 = new Province();
-		province1.setName("Province 1");
+		province1.setName("Gode");
 		Boundary boundary1 = new Boundary();
 		boundary1.setBottomRight(new Point(10, 20));
 		boundary1.setUpperLeft(new Point(10, 20));
 		province1.setBoundary(boundary1);
 
-		Province province2 = new Province();
-		province2.setName("Province 2");
-		Boundary boundary2 = new Boundary();
-		boundary2.setBottomRight(new Point(10, 20));
-		boundary2.setUpperLeft(new Point(10, 20));
-		province2.setBoundary(boundary2);
-
-		List<Province> provinces = Arrays.asList(province1, province2);
+		List<Province> provinces = Arrays.asList(province1 );
 		ProvinceList pList = new ProvinceList();
 		pList.setProvinces(provinces);
 		property.setProvinces(pList);

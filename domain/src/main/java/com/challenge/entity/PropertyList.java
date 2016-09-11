@@ -13,9 +13,10 @@ public class PropertyList implements Serializable {
 	@JsonProperty("totalProperties")
 	private Integer totalProperties;
 
+	@JsonProperty("properties")
 	private List<Property> properties;
 
-	private HashMap<Long, Property> propertyMap;
+	private transient HashMap<Long, Property> propertyMap;
 
 	public Integer getTotalProperties() {
 		return totalProperties;

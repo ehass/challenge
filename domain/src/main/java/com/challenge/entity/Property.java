@@ -3,6 +3,7 @@ package com.challenge.entity;
 import java.io.Serializable;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.google.gson.annotations.SerializedName;
 
 public class Property implements Serializable {
 
@@ -20,15 +21,19 @@ public class Property implements Serializable {
 	@JsonProperty("description")
 	private String description;
 
+	@SerializedName("lat")
 	@JsonProperty("lat")
 	private int latitude;
 
+	@SerializedName("long")
 	@JsonProperty("long")
 	private int longitude;
 
+	@SerializedName("beds")
 	@JsonProperty("beds")
 	private int numBeds;
 
+	@SerializedName("baths")
 	@JsonProperty("baths")
 	private int numBaths;
 
@@ -36,7 +41,7 @@ public class Property implements Serializable {
 	private int squareMeters;
 
 	@JsonProperty("provinces")
-	private ProvinceList provinces;
+	private transient ProvinceList provinces;
 
 	public Long getId() {
 		return id;

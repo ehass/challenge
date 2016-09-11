@@ -19,6 +19,7 @@ import com.challenge.entity.Spotippos;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.gson.Gson;
 
 public abstract class AbstractLoadData implements Serializable {
 
@@ -28,46 +29,49 @@ public abstract class AbstractLoadData implements Serializable {
 	private static final String ADDED_PROPERTIES_JSON = "src/main/resources/files/addedProperties.json";
 
 	protected DataFactory dataFactory;
-	protected Spotippos spotippos;
-	protected PropertyList properties;
-	protected ProvinceList provinces;
 
 	protected Spotippos getSpotippos() throws Exception {
-		if (spotippos == null) {
-			this.spotippos = loadSpottipos();
-		}
-		return this.spotippos;
+		return loadSpottipos();
 	}
 
-	protected Spotippos loadSpottipos() throws Exception {
+	protected void addProperty(Property newProperty) throws Exception {
+		PropertyList addedPropertyList = new PropertyList();
+		try {
+			addedPropertyList = loadAddedProperties();
+			List<Property> propertiesList = addedPropertyList.getProperties();
+			if (propertiesList == null) {
+				propertiesList = new ArrayList<>();
+			}
+			propertiesList.add(newProperty);
+			addedPropertyList.setProperties(propertiesList);
+			addedPropertyList.setTotalProperties(propertiesList.size());
+		} catch (Exception e) {
+		}
+
+		try {
+			writeAddedProperties(addedPropertyList);
+		} catch (Exception e) {
+			throw new Exception("Error while adding new property");
+		}
+	}
+
+	private Spotippos loadSpottipos() throws Exception {
 		try {
 			Spotippos spottipos = new Spotippos();
+			PropertyList properties = this.loadProperties();
+			ProvinceList provinces = this.loadProvinces();
 
-			for (Property property : this.getProperties().getProperties()) {
+			for (Property property : properties.getProperties()) {
 				ProvinceSearch search = new ProvinceSearch();
-				property.setProvinces(search.findProvinces(property, this.getProvinces()));
+				property.setProvinces(search.findProvinces(property, provinces));
 			}
 
-			spottipos.setProvinces(this.getProvinces());
-			spottipos.setProperties(this.getProperties());
+			spottipos.setProvinces(provinces);
+			spottipos.setProperties(properties);
 			return spottipos;
 		} catch (Exception e) {
 			throw e;
 		}
-	}
-
-	private PropertyList getProperties() throws Exception {
-		if (this.properties == null) {
-			this.properties = loadProperties();
-		}
-		return this.properties;
-	}
-
-	private ProvinceList getProvinces() throws Exception {
-		if (this.provinces == null) {
-			this.provinces = loadProvinces();
-		}
-		return this.provinces;
 	}
 
 	private ProvinceList loadProvinces() throws Exception {
@@ -90,38 +94,57 @@ public abstract class AbstractLoadData implements Serializable {
 	private PropertyList loadProperties() throws Exception {
 		ObjectMapper mapper = new ObjectMapper();
 		PropertyList propertyList = mapper.readValue(new File(PROPERTIES_JSON), PropertyList.class);
+		PropertyList addedPropertyList = loadAddedProperties();
+
+		propertyList.getProperties().addAll(addedPropertyList.getProperties());
+
 		HashMap<Long, Property> propertyMap = new HashMap<Long, Property>();
+		propertyMap.putAll(addedPropertyList.getPropertyMap());
+
 		for (Property p : propertyList.getProperties()) {
 			propertyMap.put(p.getId(), p);
 		}
 		propertyList.setPropertyMap(propertyMap);
-		// propertyMap.putAll(loadAddedProperties());
+
+		int totalProperties = propertyList.getTotalProperties() + addedPropertyList.getTotalProperties();
+		propertyList.setTotalProperties(totalProperties);
 		return propertyList;
 	}
 
-	private HashMap<Long, Property> loadAddedProperties() throws Exception {
-		HashMap<Long, Property> propertyMap = new HashMap<Long, Property>();
-		File addedProperties = new File(ADDED_PROPERTIES_JSON);
-		if (addedProperties.exists()) {
+	private PropertyList loadAddedProperties() {
+		PropertyList propertyList = new PropertyList();
+		try {
+			File addedProperties = new File(ADDED_PROPERTIES_JSON);
 			ObjectMapper mapper = new ObjectMapper();
 			mapper.configure(DeserializationFeature.FAIL_ON_MISSING_CREATOR_PROPERTIES, true);
 
-			PropertyList propertyList = mapper.readValue(addedProperties, PropertyList.class);
+			propertyList = mapper.readValue(addedProperties, PropertyList.class);
+			HashMap<Long, Property> propertyMap = new HashMap<>();
 			for (Property p : propertyList.getProperties()) {
 				propertyMap.put(p.getId(), p);
 			}
-		} else {
-			Writer writer = null;
-			try {
-				writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(ADDED_PROPERTIES_JSON), "utf-8"));
-				writer.write("{}");
-				;
-			} catch (Exception e1) {
-				throw e1;
-			} finally {
-				writer.close();
-			}
+			propertyList.setPropertyMap(propertyMap);
+			propertyList.setTotalProperties(propertyList.getProperties().size());
+		} catch (Exception e) {
+			propertyList.setProperties(new ArrayList<>());
+			propertyList.setPropertyMap(new HashMap<Long, Property>());
+			propertyList.setTotalProperties(0);
 		}
-		return propertyMap;
+		return propertyList;
 	}
+
+	private void writeAddedProperties(PropertyList addedProperties) throws Exception {
+		Writer writer = null;
+		try {
+			Gson gson = new Gson();
+			String jsonString = gson.toJson(addedProperties);
+			writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(ADDED_PROPERTIES_JSON), "utf-8"));
+			writer.write(jsonString);
+		} catch (Exception e1) {
+			throw e1;
+		} finally {
+			writer.close();
+		}
+	}
+
 }
